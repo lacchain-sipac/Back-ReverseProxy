@@ -1,0 +1,57 @@
+trigger:
+- development
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish dist as an artifact'
+  inputs:
+    targetPath: '$(Pipeline.Workspace)/s/'
+    artifact: 'source'
+    publishLocation: 'pipeline'
+
+- script: |
+   echo ****Replacing environment variables****   
+   < certificate-1.yml sed  ' s|{{SIPAC_HOSTNAME}}|'$(SIPAC_HOSTNAME)'|g ' > certificate-1-prod.yml
+   < ingress-service-1.yml sed  ' s|{{SIPAC_HOSTNAME}}|'$(SIPAC_HOSTNAME)'|g ' > ingress-service-1-prod.yml
+   < ingress-service-2.yml sed  ' s|{{SIPAC_HOSTNAME}}|'$(SIPAC_HOSTNAME)'|g ' > ingress-service-2-prod.yml
+  workingDirectory: '$(Pipeline.Workspace)/s/k8s'
+  displayName: 'Setting Environment variables'
+
+- task: Kubernetes@1
+  displayName: 'kubectl Applying CLuster Issuer Configuration'
+  inputs:
+    kubernetesServiceEndpoint: '$(k8S_SERVICE_ENDPOINT)'
+    command: apply
+    useConfigurationFile: true
+    configuration: '$(Pipeline.Workspace)/s/k8s/cluster-issuer.yml'
+    workingDirectory: '$(Pipeline.Workspace)/s'
+
+- task: Kubernetes@1
+  displayName: 'kubectl Applying Certificate configuration'
+  inputs:
+    kubernetesServiceEndpoint: '$(k8S_SERVICE_ENDPOINT)'
+    command: apply
+    useConfigurationFile: true
+    configuration: '$(Pipeline.Workspace)/s/k8s/certificate-1-prod.yml'
+    workingDirectory: '$(Pipeline.Workspace)/s'
+
+- task: Kubernetes@1
+  displayName: 'kubectl Applying Ingress-service-1 configuration'
+  inputs:
+    kubernetesServiceEndpoint: '$(k8S_SERVICE_ENDPOINT)'
+    command: apply
+    useConfigurationFile: true
+    configuration: '$(Pipeline.Workspace)/s/k8s/ingress-service-1-prod.yml'
+    workingDirectory: '$(Pipeline.Workspace)/s'
+
+- task: Kubernetes@1
+  displayName: 'kubectl Applying Ingress-service-2 configuration'
+  inputs:
+    kubernetesServiceEndpoint: '$(k8S_SERVICE_ENDPOINT)'
+    command: apply
+    useConfigurationFile: true
+    configuration: '$(Pipeline.Workspace)/s/k8s/ingress-service-2-prod.yml'
+    workingDirectory: '$(Pipeline.Workspace)/s'

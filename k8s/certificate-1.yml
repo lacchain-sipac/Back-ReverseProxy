@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: {{SIPAC_HOSTNAME}}-tls #this is a tls certificate.
+  namespace: cert-manager
+spec:
+  secretName: {{SIPAC_HOSTNAME}}-secret-name
+  issuerRef: 
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: {{SIPAC_HOSTNAME}}
+  dnsNames:
+    - {{SIPAC_HOSTNAME}} #your domain name
+  acme:
+    config:
+      - http01:
+          ingressClass: nginx
+        domains:
+          - {{SIPAC_HOSTNAME}}
