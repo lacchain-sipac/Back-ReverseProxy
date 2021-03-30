@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingress-service-1
+  namespace: kube-honduras
+  annotations: 
+    kubernetes.io/ingress.class: nginx
+    #nginx.ingress.kubernetes.io/rewrite-target: /$1 #$1 cuts hostname, $2 cuts (abc.com/to_be_cut/some ==> /api/some)
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+    nginx.org/websocket-services: "websocket"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.org/proxy-connect-timeout: "60s"
+    nginx.org/proxy-read-timeout: "60s"
+spec:
+  tls:
+    - hosts:
+        - {{SIPAC_HOSTNAME}}
+      secretName: {{SIPAC_HOSTNAME}}-secret-name
+  rules:
+    - host: {{SIPAC_HOSTNAME}}
+      http:
+        paths:        
+        - path: /ev-user-websocket
+          backend:
+            serviceName: websocket
+            servicePort: 8082
+
+        - path: /
+          backend:
+            serviceName: app-honduras
+            servicePort: 80
+
+        
